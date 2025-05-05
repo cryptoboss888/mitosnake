@@ -392,6 +392,10 @@
             if (gameRunning) return;
             gameRunning = true;
             messageBox.textContent = '#MagicMito';
+            mitoScore = 0; 
+            eigenScore = 0; 
+            ethfiScore = 0; 
+            theoScore = 0;
             gameInterval = setInterval(update, gameSpeed);
             snake = [{ x: 10, y: 10 }];
             direction = 'right';
