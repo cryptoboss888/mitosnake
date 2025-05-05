@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mitosis Snake Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Styling for the Snake game */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to bottom, #030712, #111827); /* Reverted to original background */
+            font-family: 'Press Start 2P', monospace;
+            color: #ffffff;
+            overflow: hidden;
+        }
+        #game-title {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #f5f5f5;
+            text-shadow: 4px 4px 12px rgba(0, 0, 0, 0.8);
+            animation: fadeIn 2s ease, pulse 2s infinite alternate;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.06); }
+        }
+        #game-logo {
+            margin-bottom: 20px;
+            width: 200px;
+            height: auto;
+        }
+        #game-board {
+            background-color: #1d4ed8;
+            border: 4px solid #60a5fa;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        #game-board:hover {
+            transform: scale(1.04);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+        }
+        #message-box {
+            margin-top: 10px;
+            font-size: 1.4em;
+            color: #f5f5f5;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+            animation: fadeIn 1s ease, pulse 2s infinite alternate;
+        }
+        .button-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        .game-button {
+            padding: 14px 28px;
+            font-size: 1.1em;
+            font-family: 'Press Start 2P', monospace;
+            background-color: #4338ca;
+            color: #f5f5f5;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+        }
+        .game-button:hover {
+            background-color: #6d28d9;
+            transform: scale(1.08);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+        }
+        .game-button:active {
+            background-color: #4c1d95;
+            transform: scale(0.92);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
+        }
+        #score-display {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #ffffff;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script>
+        // Sound effects using Tone.js
+        const synth = new Tone.Synth().toDestination();
+
+        function playEatSound() {
+            synth.triggerAttackRelease("C6", "8n");
+        }
+
+        function playGameOverSound() {
+            const polySynth = new Tone.PolySynth().toDestination();
+            polySynth.triggerAttackRelease(["C2", "E2", "G2", "Bb2"], "2n");
+        }
+
+        function playMoveSound() {
+            const membraneSynth = new Tone.MembraneSynth().toDestination();
+            membraneSynth.triggerAttackRelease("A4", "16n");
+        }
+    </script>
+</head>
+<body>
+    <img id="game-logo" src="mito2.png" alt="Game Logo">
+    <h1 id="game-title">Mitosis Snake Game</h1>
+    <canvas id="game-board" width="720" height="500"></canvas>
+    <div id="message-box"></div>
+    <div class="button-container">
+        <button id="start-button" class="game-button">Start</button>
+        <button id="pause-button" class="game-button">Pause</button>
+        <button id="sound-button" class="game-button">Sound On</button>
+    </div>
+    <div id="score-display">
+        <div id="mito-score">$MITO: 0</div>
+        <div id="eigen-score">$EIGEN: 0</div>
+        <div id="ethfi-score">$ETHFI: 0</div>
+        <div id="theo-score">$THEO: 0</div>
+    </div>
+    <script>
+        // Game logic
+        const canvas = document.getElementById('game-board');
+        const ctx = canvas.getContext('2d');
+        const messageBox = document.getElementById('message-box');
+        const startButton = document.getElementById('start-button');
+        const pauseButton = document.getElementById('pause-button');
+        const soundButton = document.getElementById('sound-button');
+        const mitoScoreDisplay = document.getElementById('mito-score');
+        const eigenScoreDisplay = document.getElementById('eigen-score');
+        const ethfiScoreDisplay = document.getElementById('ethfi-score');
+        const theoScoreDisplay = document.getElementById('theo-score');
+
+        const gridSize = 20;
+        let snake = [{ x: 10, y: 10 }];
+        let food; // Changed to hold only one food item
+        let direction = 'right';
+        let gameSpeed = 100;
+        let gameRunning = false;
+        let gameInterval;
+        let mitoScore = 0;
+        let eigenScore = 0;
+        let ethfiScore = 0;
+        let theoScore = 0;
+        let soundEnabled = true;
+        const particles = [];
+
+        // Load the food images
+        const foodImages = {
+            mito: new Image(),
+            eigen: new Image(),
+            ethfi: new Image(),
+            theo: new Image(),
+        };
+        foodImages.mito.src = 'MITO.png';
+        foodImages.eigen.src = 'eigen.png';
+        foodImages.ethfi.src = 'ethfi.png';
+        foodImages.theo.src = 'theo.png';
+
+        // Food type and their properties.  Added mito food type
+        const foodTypes = {
+            mito: {
+                color: '#8b5cf6', // Purple - Not used anymore, but can be used for other things
+                score: 5,
+                probability: 0.6, // 60% chance
+                image: foodImages.mito, // Use the image here
+            },
+            eigen: {
+                color: '#FFA500', // Orange
+                score: 10,
+                probability: 0.2, // 20% chance
+                image: foodImages.eigen,
+            },
+            ethfi: {
+                color: '#FFFFFF', // White
+                score: 20,
+                probability: 0.1, // 10% chance
+                image: foodImages.ethfi,
+            },
+            theo: {
+                color: '#0000FF', // Blue
+                score: 30,
+                probability: 0.1, // 10% chance
+                image: foodImages.theo,
+            }
+        };
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw snake with gradient, outline, and glow, plus particles
+            snake.forEach((segment, index) => {
+                // Create gradient
+                const gradient = ctx.createLinearGradient(
+                    segment.x * gridSize, segment.y * gridSize,
+                    (segment.x + 1) * gridSize, (segment.y + 1) * gridSize
+                );
+
+                const startColor = `hsl(${(index * 30 + 180) % 360}, 100%, 65%)`;
+                const endColor = `hsl(${(index * 30 + 200) % 360}, 100%, 85%)`;
+
+                gradient.addColorStop(0, startColor);
+                gradient.addColorStop(1, endColor);
+
+                ctx.fillStyle = gradient;
+
+                // Glowing effect
+                ctx.shadowColor = `hsl(${(index * 30 + 190) % 360}, 100%, 75%)`;
+                ctx.shadowBlur = 12;
+
+                // Outline
+                ctx.strokeStyle = '#6ee7b7';
+                ctx.lineWidth = 2;
+
+                ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+                ctx.strokeRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+
+                // Create particles
+                if (index % 2 === 0) {
+                    emitParticles(segment.x * gridSize + gridSize / 2, segment.y * gridSize + gridSize / 2, startColor);
+                }
+
+                ctx.shadowBlur = 0; // Reset shadow
+            });
+
+            // Draw food with pulsing effect and different colors
+            if (food) { // Check if food exists
+                const foodSize = gridSize * (1 + 0.15 * Math.sin(Date.now() / 150));
+                const foodX = food.x * gridSize - (foodSize - gridSize) / 2;
+                const foodY = food.y * gridSize - (foodSize - gridSize) / 2;
+
+                // Use the image instead of a colored rectangle
+                const foodImage = foodTypes[food.type].image;
+                ctx.drawImage(foodImage, foodX, foodY, foodSize, foodSize);
+            }
+
+            // Draw particles
+            drawParticles();
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            const head = { x: snake[0].x, y: snake[0].y };
+
+            switch (direction) {
+                case 'up':
+                    head.y--;
+                    break;
+                case 'down':
+                    head.y++;
+                    break;
+                case 'left':
+                    head.x--;
+                    break;
+                case 'right':
+                    head.x++;
+                    break;
+            }
+
+            // Wall collision
+            if (head.x < 0 || head.x >= canvas.width / gridSize || head.y < 0 || head.y >= canvas.height / gridSize) {
+                gameOver();
+                return;
+            }
+
+            // Self-collision
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            snake.unshift(head);
+
+            // Eat food
+            if (food && head.x === food.x && head.y === food.y) { // Check if food exists
+                if (soundEnabled) playEatSound();
+                switch (food.type) {
+                    case 'mito':
+                        mitoScore += foodTypes.mito.score;
+                        break;
+                    case 'eigen':
+                        eigenScore += foodTypes.eigen.score;
+                        break;
+                    case 'ethfi':
+                        ethfiScore += foodTypes.ethfi.score;
+                        break;
+                    case 'theo':
+                        theoScore += foodTypes.theo.score;
+                        break;
+                }
+                food = null; // Remove the food after it's eaten
+            } else {
+                snake.pop();
+            }
+
+            // Generate new food randomly, but only if there isn't any
+            if (!food) {
+                let newFoodX, newFoodY, newFoodType;
+                do {
+                    newFoodX = Math.floor(Math.random() * (canvas.width / gridSize));
+                    newFoodY = Math.floor(Math.random() * (canvas.height / gridSize));
+                    newFoodType = generateFoodType(); // Use the function
+                } while (snake.some(segment => segment.x === newFoodX && segment.y === newFoodY));
+
+                food = { x: newFoodX, y: newFoodY, type: newFoodType };
+            }
+
+            updateParticles();
+            draw();
+            mitoScoreDisplay.textContent = `$MITO: ${mitoScore}`;
+            eigenScoreDisplay.textContent = `$EIGEN: ${eigenScore}`;
+            ethfiScoreDisplay.textContent = `$ETHFI: ${ethfiScore}`;
+            theoScoreDisplay.textContent = `$THEO: ${theoScore}`;
+          
+        }
+
+        // Function to generate food type with priorities
+        function generateFoodType() {
+            const rand = Math.random();
+            if (rand < foodTypes.mito.probability) {
+                return 'mito';
+            } else if (rand < foodTypes.mito.probability + foodTypes.eigen.probability) {
+                return 'eigen';
+            } else if (rand < foodTypes.mito.probability + foodTypes.eigen.probability + foodTypes.ethfi.probability) {
+                return 'ethfi';
+            } else {
+                return 'theo';
+            }
+        }
+
+        // Particle system functions
+        function emitParticles(x, y, color) {
+            for (let i = 0; i < 3; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    color: color,
+                    size: Math.random() * 4 + 2,
+                    speedX: (Math.random() - 0.5) * 3,
+                    speedY: (Math.random() - 0.5) * 3,
+                    opacity: 1,
+                    decay: 0.02
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].x += particles[i].speedX;
+                particles[i].y += particles[i].speedY;
+                particles[i].opacity -= particles[i].decay;
+
+                if (particles[i].opacity <= 0) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        function drawParticles() {
+            particles.forEach(particle => {
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fillStyle = particle.color;
+                ctx.globalAlpha = particle.opacity;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        function startGame() {
+            if (gameRunning) return;
+            gameRunning = true;
+            messageBox.textContent = '#MagicMito';
+            gameInterval = setInterval(update, gameSpeed);
+            snake = [{ x: 10, y: 10 }];
+            direction = 'right';
+            food = null; // Ensure no food exists at start
+            // Generate the first food item
+            let newFoodX, newFoodY, newFoodType;
+            do {
+                newFoodX = Math.floor(Math.random() * (canvas.width / gridSize));
+                newFoodY = Math.floor(Math.random() * (canvas.height / gridSize));
+                newFoodType = generateFoodType(); // Call the function here
+            } while (snake.some(segment => segment.x === newFoodX && segment.y === newFoodY));
+            food = { x: newFoodX, y: newFoodY, type: newFoodType };
+        }
+
+        function pauseGame() {
+            gameRunning = false;
+            messageBox.textContent = 'Game Paused!';
+            clearInterval(gameInterval);
+        }
+
+        function gameOver() {
+            if (soundEnabled) playGameOverSound();
+            gameRunning = false;
+            messageBox.textContent = `GMITO !!! Press Start to Grind Again !!!.`;
+            clearInterval(gameInterval);
+        }
+
+        function handleKeyDown(event) {
+            if (!gameRunning) return;
+            switch (event.key) {
+                case 'ArrowUp':
+                    if (direction !== 'down') direction = 'up';
+                    break;
+                case 'ArrowDown':
+                    if (direction !== 'up') direction = 'down';
+                    break;
+                case 'ArrowLeft':
+                    if (direction !== 'right') direction = 'left';
+                    break;
+                case 'ArrowRight':
+                    if (direction !== 'left') direction = 'right';
+                    break;
+            }
+            if (soundEnabled) playMoveSound();
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            soundButton.textContent = soundEnabled ? 'Sound On' : 'Sound Off';
+        }
+
+        // Load the images and start the game
+        let imagesLoaded = 0;
+        const totalImages = Object.keys(foodImages).length;
+
+        function imageLoaded() {
+            imagesLoaded++;
+            if (imagesLoaded === totalImages) {
+                // All images are loaded, start the game or draw
+                document.addEventListener('keydown', handleKeyDown);
+                startButton.addEventListener('click', startGame);
+                pauseButton.addEventListener('click', pauseGame);
+                soundButton.addEventListener('click', toggleSound);
+                draw(); // Draw the game board
+            }
+        }
+
+        for (const key in foodImages) {
+            foodImages[key].onload = imageLoaded;
+            // Check if the image is already loaded (cached)
+            if (foodImages[key].complete) {
+                imageLoaded();
+            }
+        }
+    </script>
+</body>
+</html>
+
