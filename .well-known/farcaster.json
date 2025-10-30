@@ -3,8 +3,26 @@
     "header": "eyJmaWQiOjY2Mjg0NiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEYwNDEyQjViZTU0YTc0NGEzMUFlQjJBNWJFNDZkNmY3M0VhNDkyYzkifQ",
     "payload": "eyJkb21haW4iOiJtaXRvc25ha2UudmVyY2VsLmFwcCJ9",
     "signature": "jVijLC+OohPLAROMHeY1ZI1ANGzzu6A7cT/xRU30tRUNfm/X0G0j/YVIOA4noAdhJtj5t2jENDOs5P3vElGMPxw="
+ "baseBuilder": {
+    "ownerAddress": "0x3c69A9eBe7C544fB58D46b06897A08a1f41c1ca8"
     
     
+     "name": "Mitosnake on Base",
+    "version": "1",
+    "iconUrl": "https://mitosnake.vercel.app/icon.png",
+    "homeUrl": "https://mitosnake.vercel.app",
+    "imageUrl": "https://mitosnake.vercel.app/image.png",
+    "buttonTitle": "Lets Goooo",
+    "splashImageUrl": "https://mitosnake.vercel.app/icon.png",
+    "splashBackgroundColor": "#0052FF",
+    "subtitle": "Play, grow, and compete on base",
+    "description": "Brings the classic Snake game to the Base App, where every move is onchain.  Connect your wallet, play instantly, and share your top scores with friends on Farcaster.  Earn bragging rights, collect rewards, and climb the leaderboard as the ultimate onchain serpent.",
+    "primaryCategory": "games",
+    "screenshotUrls": [
+      "https://mitosnake.vercel.app/image.png"
+    ],
+    "ogTitle": "Let Snake it",
+    "ogImageUrl": "https://mitosnake.vercel.app/image.png"
   }
 }
   
