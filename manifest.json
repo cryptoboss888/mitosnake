@@ -1,0 +1,16 @@
+{
+  "frame": {
+    "name": "Mitosnake on Base",
+    "version": "1",
+    "iconUrl": "https://mitosnake.vercel.app/icon.png",
+    "homeUrl": "https://mitosnake.vercel.app",
+    "subtitle": "Play, grow and compete on base !",
+    "description": "Bringing the classic Snake game to the Base App, where every move is onchain.  Connect your wallet, play instantly, and share your top scores with friends on Farcaster.  Earn bragging rights, collect rewards, and climb the leaderboard as the ultimate onchain serpent",
+    "primaryCategory": "games",
+    "screenshotUrls": [
+      "https://mitosnake.vercel.app/screenshots/gameplay1.png"
+    ],
+    "splashImageUrl": "https://mitosnake.vercel.app/icon.png",
+    "splashBackgroundColor": "#0052FF"
+  }
+}
